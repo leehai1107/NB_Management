@@ -3,6 +3,7 @@ import Header from './components/Header';
 import LeftPanel from './components/LeftPanel';
 import DashboardPage from './pages/DashboardPage';
 import FullSellPage from './pages/FullSellPage';
+import FullBMPage from './pages/FullBMPage';
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -30,10 +31,23 @@ function App() {
     loadingSheets: true
   });
 
+  // FullBM page state
+  const [fullBMState, setFullBMState] = useState({
+    searchResults: [],
+    loading: false,
+    error: null,
+    idInput: '',
+    viewMode: 'list',
+    availableSheets: ['Sheet1'],
+    loadingSheets: true
+  });
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
         return <DashboardPage state={dashboardState} setState={setDashboardState} />;
+      case 'fullbm':
+        return <FullBMPage state={fullBMState} setState={setFullBMState} />;
       case 'fullsell':
         return <FullSellPage state={fullSellState} setState={setFullSellState} />;
       default:

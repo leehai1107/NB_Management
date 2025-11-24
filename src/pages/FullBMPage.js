@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { fetchAllData, fetchSheetNames } from '../services/googleSheets_Via';
+import { fetchQLBMData, fetchQLBMSheetNames } from '../services/googleSheets_QLBM';
 
-function DashboardPage({ state, setState }) {
+function FullBMPage({ state, setState }) {
   const { searchResults, loading, error, idInput, viewMode, availableSheets, loadingSheets } = state;
   
   const setSearchResults = (value) => setState(prev => ({ ...prev, searchResults: value }));
@@ -19,14 +19,13 @@ function DashboardPage({ state, setState }) {
     const loadSheetNames = async () => {
       try {
         setLoadingSheets(true);
-        const sheetNames = await fetchSheetNames();
+        const sheetNames = await fetchQLBMSheetNames();
         if (sheetNames.length > 0) {
           setAvailableSheets(sheetNames);
         }
       } catch (err) {
         console.error('Failed to load sheet names:', err);
-        // Keep default sheets if API call fails
-        setAvailableSheets(['FULL_VIA']);
+        setAvailableSheets(['Sheet1']);
       } finally {
         setLoadingSheets(false);
       }
@@ -54,12 +53,14 @@ function DashboardPage({ state, setState }) {
       // Search across all available sheets IN PARALLEL
       const searchPromises = availableSheets.map(async (sheet) => {
         try {
-          const sheetData = await fetchAllData(sheet);
+          const sheetData = await fetchQLBMData(sheet);
           const foundInSheet = sheetData.filter(item => 
-            ids.some(id => 
-              String(item.ID) === String(id) || 
-              item.ID === id
-            )
+            ids.some(id => {
+              // Search in ALL columns for the ID value
+              return Object.values(item).some(value => 
+                String(value) === String(id)
+              );
+            })
           );
           
           if (foundInSheet.length > 0) {
@@ -91,8 +92,15 @@ function DashboardPage({ state, setState }) {
         }
       });
       
-      // Find IDs that were not found
-      const foundIds = new Set(allFoundRecords.map(record => String(record.ID)));
+      // Find IDs that were not found - check all record values
+      const foundIds = new Set();
+      allFoundRecords.forEach(record => {
+        Object.values(record).forEach(value => {
+          if (value && ids.includes(String(value))) {
+            foundIds.add(String(value));
+          }
+        });
+      });
       const notFoundIds = ids.filter(id => !foundIds.has(String(id)));
       
       // Add not-found IDs as special records
@@ -130,7 +138,7 @@ function DashboardPage({ state, setState }) {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Search by ID Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Search by ID(s) Via</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Search by ID(s) - Full BM</h2>
         
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[250px]">
@@ -208,4 +216,4 @@ function DashboardPage({ state, setState }) {
   );
 }
 
-export default DashboardPage;
+export default FullBMPage;

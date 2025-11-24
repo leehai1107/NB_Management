@@ -138,7 +138,7 @@ function FullSellPage({ state, setState }) {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Search by ID Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Search by ID(s)</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Search by ID(s) TKQC</h2>
         
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[250px]">

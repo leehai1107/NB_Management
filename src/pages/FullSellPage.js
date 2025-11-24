@@ -92,14 +92,37 @@ function FullSellPage({ state, setState }) {
         }
       });
       
+      // Find IDs that were not found - check all record values
+      const foundIds = new Set();
+      allFoundRecords.forEach(record => {
+        Object.values(record).forEach(value => {
+          if (value && ids.includes(String(value))) {
+            foundIds.add(String(value));
+          }
+        });
+      });
+      const notFoundIds = ids.filter(id => !foundIds.has(String(id)));
+      
+      // Add not-found IDs as special records
+      const notFoundRecords = notFoundIds.map(id => ({
+        ID: id,
+        _notFound: true,
+        _sheetName: 'Not Found'
+      }));
+      
+      const allRecords = [...allFoundRecords, ...notFoundRecords];
+      
       if (allFoundRecords.length === 0) {
         setError(`No data found for ID(s): ${ids.join(', ')} across ${availableSheets.length} sheet(s)`);
-        setViewMode('list');
-      } else {
-        setSearchResults(allFoundRecords);
+        setSearchResults(allRecords);
         setViewMode('search');
-        const message = `Found ${allFoundRecords.length} record(s) in ${searchedSheets.length} sheet(s): ${searchedSheets.join(', ')}`;
-        if (allFoundRecords.length < ids.length) {
+      } else {
+        setSearchResults(allRecords);
+        setViewMode('search');
+        const message = notFoundIds.length > 0 
+          ? `${notFoundIds.length} ID(s) không phải nhà mình: ${notFoundIds.join(', ')}`
+          : `Found ${allFoundRecords.length} record(s) in ${searchedSheets.length} sheet(s): ${searchedSheets.join(', ')}`;
+        if (notFoundIds.length > 0) {
           setError(message);
         }
       }
@@ -139,10 +162,10 @@ function FullSellPage({ state, setState }) {
         <div className="mt-4 flex flex-wrap gap-3 items-center">
           <button
             onClick={fetchDataByIdHandler}
-            disabled={loading}
+            disabled={loading || loadingSheets}
             className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Searching...' : 'Search All Sheets'}
+            {loading ? 'Searching...' : loadingSheets ? 'Please wait...' : 'Search All Sheets'}
           </button>
           
           {viewMode === 'search' && (
@@ -159,12 +182,8 @@ function FullSellPage({ state, setState }) {
             </button>
           )}
           
-          {loadingSheets ? (
-            <span className="text-sm text-gray-500">Loading sheets...</span>
-          ) : (
-            <span className="text-sm text-gray-600">
-              Will search across {availableSheets.length} sheet(s): {availableSheets.join(', ')}
-            </span>
+          {loadingSheets && (
+            <span className="text-sm text-gray-500">⏳ Loading sheet names, please wait...</span>
           )}
         </div>
       </div>
@@ -179,11 +198,7 @@ function FullSellPage({ state, setState }) {
 
       {!loading && viewMode === 'search' && searchResults.length > 0 && (
         <div>
-          <div className="mb-4 flex items-center justify-between bg-green-50 border-l-4 border-green-500 p-4 rounded">
-            <span className="text-green-700 font-semibold">
-              ✓ Found {searchResults.length} {searchResults.length === 1 ? 'record' : 'records'}
-            </span>
-          </div>
+          
           <DataTable data={searchResults} />
         </div>
       )}

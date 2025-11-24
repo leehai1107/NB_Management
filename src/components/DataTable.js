@@ -55,27 +55,45 @@ function DataTable({ data }) {
             </tr>
           </thead>
           <tbody>
-            {data.map((row, rowIndex) => (
+            {data.map((row, rowIndex) => {
+              const isNotFound = row._notFound === true;
+              return (
               <tr 
                 key={rowIndex} 
-                className="border-b border-gray-200 hover:bg-blue-50 transition-colors duration-75"
+                className={`border-b border-gray-200 transition-colors duration-75 ${
+                  isNotFound 
+                    ? 'bg-red-50 hover:bg-red-100' 
+                    : 'hover:bg-blue-50'
+                }`}
               >
                 {/* Row number - sticky */}
-                <td className="sticky left-0 z-10 bg-white hover:bg-blue-50 border-r-2 border-gray-300 px-4 py-3 text-center text-xs font-semibold text-gray-600 shadow-sm">
-                  {rowIndex + 1}
+                <td className={`sticky left-0 z-10 border-r-2 border-gray-300 px-4 py-3 text-center text-xs font-semibold shadow-sm ${
+                  isNotFound 
+                    ? 'bg-red-50 hover:bg-red-100 text-red-700' 
+                    : 'bg-white hover:bg-blue-50 text-gray-600'
+                }`}>
+                  {isNotFound ? '❌' : rowIndex + 1}
                 </td>
                 {/* Data cells - scroll horizontally */}
-                {columns.map((column) => {
+                {columns.map((column, colIndex) => {
                   const cellId = `${rowIndex}-${column}`;
-                  const cellValue = row[column] !== null && row[column] !== undefined && row[column] !== '' 
+                  let cellValue = row[column] !== null && row[column] !== undefined && row[column] !== '' 
                     ? String(row[column]) 
                     : '-';
+                  
+                  // For not-found rows, show the ID in the 5th column (index 4)
+                  if (isNotFound && colIndex === 4 && column !== 'ID') {
+                    cellValue = row.ID || '-';
+                  }
+                  
                   const isCopied = copiedCell === cellId;
                   
                   return (
                     <td 
                       key={cellId} 
-                      className="border-r border-gray-200 px-2 py-2 text-sm text-gray-800 whitespace-nowrap group"
+                      className={`border-r border-gray-200 px-2 py-2 text-sm whitespace-nowrap group ${
+                        isNotFound ? 'text-red-700 font-semibold' : 'text-gray-800'
+                      }`}
                       style={{ minWidth: '150px', maxWidth: '400px' }}
                     >
                       <div className="flex items-center gap-2">
@@ -102,7 +120,8 @@ function DataTable({ data }) {
                   );
                 })}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

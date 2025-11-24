@@ -91,14 +91,30 @@ function DashboardPage({ state, setState }) {
         }
       });
       
+      // Find IDs that were not found
+      const foundIds = new Set(allFoundRecords.map(record => String(record.ID)));
+      const notFoundIds = ids.filter(id => !foundIds.has(String(id)));
+      
+      // Add not-found IDs as special records
+      const notFoundRecords = notFoundIds.map(id => ({
+        ID: id,
+        _notFound: true,
+        _sheetName: 'Not Found'
+      }));
+      
+      const allRecords = [...allFoundRecords, ...notFoundRecords];
+      
       if (allFoundRecords.length === 0) {
         setError(`No data found for ID(s): ${ids.join(', ')} across ${availableSheets.length} sheet(s)`);
-        setViewMode('list');
-      } else {
-        setSearchResults(allFoundRecords);
+        setSearchResults(allRecords);
         setViewMode('search');
-        const message = `Found ${allFoundRecords.length} record(s) in ${searchedSheets.length} sheet(s): ${searchedSheets.join(', ')}`;
-        if (allFoundRecords.length < ids.length) {
+      } else {
+        setSearchResults(allRecords);
+        setViewMode('search');
+        const message = notFoundIds.length > 0 
+          ? `Found ${allFoundRecords.length} record(s) in ${searchedSheets.length} sheet(s). ${notFoundIds.length} ID(s) not found: ${notFoundIds.join(', ')}`
+          : `Found ${allFoundRecords.length} record(s) in ${searchedSheets.length} sheet(s): ${searchedSheets.join(', ')}`;
+        if (notFoundIds.length > 0) {
           setError(message);
         }
       }
@@ -138,10 +154,10 @@ function DashboardPage({ state, setState }) {
         <div className="mt-4 flex flex-wrap gap-3 items-center">
           <button
             onClick={fetchDataByIdHandler}
-            disabled={loading}
+            disabled={loading || loadingSheets}
             className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Searching...' : 'Search All Sheets'}
+            {loading ? 'Searching...' : loadingSheets ? 'Please wait...' : 'Search All Sheets'}
           </button>
           
           {viewMode === 'search' && (
@@ -158,12 +174,8 @@ function DashboardPage({ state, setState }) {
             </button>
           )}
           
-          {loadingSheets ? (
-            <span className="text-sm text-gray-500">Loading sheets...</span>
-          ) : (
-            <span className="text-sm text-gray-600">
-              Will search across {availableSheets.length} sheet(s): {availableSheets.join(', ')}
-            </span>
+          {loadingSheets && (
+            <span className="text-sm text-gray-500">⏳ Loading sheet names, please wait...</span>
           )}
         </div>
       </div>

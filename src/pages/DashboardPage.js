@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import LoadingSpinner from '../components/LoadingSpinner';
-import SheetSelector from '../components/SheetSelector';
 import { fetchAllData, fetchSheetNames } from '../services/googleSheets_Via';
 
 function DashboardPage() {
@@ -10,7 +9,6 @@ function DashboardPage() {
   const [error, setError] = useState(null);
   const [idInput, setIdInput] = useState('');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'search'
-  const [selectedSheet, setSelectedSheet] = useState('FULL_VIA');
   const [availableSheets, setAvailableSheets] = useState(['FULL_VIA']);
   const [loadingSheets, setLoadingSheets] = useState(true);
 
@@ -22,7 +20,6 @@ function DashboardPage() {
         const sheetNames = await fetchSheetNames();
         if (sheetNames.length > 0) {
           setAvailableSheets(sheetNames);
-          setSelectedSheet(sheetNames[0]); // Set first sheet as default
         }
       } catch (err) {
         console.error('Failed to load sheet names:', err);
@@ -52,24 +49,43 @@ function DashboardPage() {
         .map(id => id.trim())
         .filter(id => id !== '');
       
-      const allData = await fetchAllData(selectedSheet);
+      // Search across all available sheets
+      let allFoundRecords = [];
+      let searchedSheets = [];
       
-      // Find all matching records
-      const foundRecords = allData.filter(item => 
-        ids.some(id => 
-          String(item.ID) === String(id) || 
-          item.ID === id
-        )
-      );
+      for (const sheet of availableSheets) {
+        try {
+          const sheetData = await fetchAllData(sheet);
+          const foundInSheet = sheetData.filter(item => 
+            ids.some(id => 
+              String(item.ID) === String(id) || 
+              item.ID === id
+            )
+          );
+          
+          if (foundInSheet.length > 0) {
+            // Add sheet name to each record for reference
+            const recordsWithSheet = foundInSheet.map(record => ({
+              ...record,
+              _sheetName: sheet
+            }));
+            allFoundRecords.push(...recordsWithSheet);
+            searchedSheets.push(sheet);
+          }
+        } catch (err) {
+          console.error(`Error searching sheet ${sheet}:`, err);
+        }
+      }
       
-      if (foundRecords.length === 0) {
-        setError(`No data found for ID(s): ${ids.join(', ')}`);
+      if (allFoundRecords.length === 0) {
+        setError(`No data found for ID(s): ${ids.join(', ')} across ${availableSheets.length} sheet(s)`);
         setViewMode('list');
       } else {
-        setSearchResults(foundRecords);
+        setSearchResults(allFoundRecords);
         setViewMode('search');
-        if (foundRecords.length < ids.length) {
-          setError(`Found ${foundRecords.length} of ${ids.length} IDs`);
+        const message = `Found ${allFoundRecords.length} record(s) in ${searchedSheets.length} sheet(s): ${searchedSheets.join(', ')}`;
+        if (allFoundRecords.length < ids.length) {
+          setError(message);
         }
       }
       setLoading(false);
@@ -104,32 +120,36 @@ function DashboardPage() {
           </div>
         </div>
         
-        {/* Sheet Selector with Buttons */}
-        <div className="mt-4">
-          {loadingSheets ? (
-            <div className="p-2">
-              <p className="text-gray-600 text-sm">Loading sheets...</p>
-            </div>
-          ) : (
-            <SheetSelector 
-              sheets={availableSheets}
-              selectedSheet={selectedSheet}
-              onSheetChange={(sheet) => {
-                setSelectedSheet(sheet);
-                setSearchResults([]);
-                setViewMode('list');
-                setError(null);
-              }}
-              onSearch={fetchDataByIdHandler}
-              loading={loading}
-              showClearButton={viewMode === 'search'}
-              onClear={() => {
+        {/* Search Controls */}
+        <div className="mt-4 flex flex-wrap gap-3 items-center">
+          <button
+            onClick={fetchDataByIdHandler}
+            disabled={loading}
+            className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Searching...' : 'Search All Sheets'}
+          </button>
+          
+          {viewMode === 'search' && (
+            <button
+              onClick={() => {
                 setViewMode('list');
                 setSearchResults([]);
                 setIdInput('');
                 setError(null);
               }}
-            />
+              className="px-6 py-2.5 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Clear
+            </button>
+          )}
+          
+          {loadingSheets ? (
+            <span className="text-sm text-gray-500">Loading sheets...</span>
+          ) : (
+            <span className="text-sm text-gray-600">
+              Will search across {availableSheets.length} sheet(s): {availableSheets.join(', ')}
+            </span>
           )}
         </div>
       </div>

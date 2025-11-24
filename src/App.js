@@ -8,14 +8,36 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
 
+  // Dashboard page state
+  const [dashboardState, setDashboardState] = useState({
+    searchResults: [],
+    loading: false,
+    error: null,
+    idInput: '',
+    viewMode: 'list',
+    availableSheets: ['FULL_VIA'],
+    loadingSheets: true
+  });
+
+  // FullSell page state
+  const [fullSellState, setFullSellState] = useState({
+    searchResults: [],
+    loading: false,
+    error: null,
+    idInput: '',
+    viewMode: 'list',
+    availableSheets: ['Sheet1'],
+    loadingSheets: true
+  });
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage />;
+        return <DashboardPage state={dashboardState} setState={setDashboardState} />;
       case 'fullsell':
-        return <FullSellPage />;
+        return <FullSellPage state={fullSellState} setState={setFullSellState} />;
       default:
-        return <DashboardPage />;
+        return <DashboardPage state={dashboardState} setState={setDashboardState} />;
     }
   };
 

@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { fetchTongBanData, fetchTongBanSheetNames } from '../services/googleSheets_TongBan';
 
-function FullSellPage() {
-  const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [idInput, setIdInput] = useState('');
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'search'
-  const [availableSheets, setAvailableSheets] = useState(['Sheet1']);
-  const [loadingSheets, setLoadingSheets] = useState(true);
+function FullSellPage({ state, setState }) {
+  const { searchResults, loading, error, idInput, viewMode, availableSheets, loadingSheets } = state;
+  
+  const setSearchResults = (value) => setState(prev => ({ ...prev, searchResults: value }));
+  const setLoading = (value) => setState(prev => ({ ...prev, loading: value }));
+  const setError = (value) => setState(prev => ({ ...prev, error: value }));
+  const setIdInput = (value) => setState(prev => ({ ...prev, idInput: value }));
+  const setViewMode = (value) => setState(prev => ({ ...prev, viewMode: value }));
+  const setAvailableSheets = (value) => setState(prev => ({ ...prev, availableSheets: value }));
+  const setLoadingSheets = (value) => setState(prev => ({ ...prev, loadingSheets: value }));
 
   // Fetch sheet names on component mount
   useEffect(() => {

@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { fetchAllData, fetchSheetNames } from '../services/googleSheets_Via';
 
-function DashboardPage() {
-  const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [idInput, setIdInput] = useState('');
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'search'
-  const [availableSheets, setAvailableSheets] = useState(['FULL_VIA']);
-  const [loadingSheets, setLoadingSheets] = useState(true);
+function DashboardPage({ state, setState }) {
+  const { searchResults, loading, error, idInput, viewMode, availableSheets, loadingSheets } = state;
+  
+  const setSearchResults = (value) => setState(prev => ({ ...prev, searchResults: value }));
+  const setLoading = (value) => setState(prev => ({ ...prev, loading: value }));
+  const setError = (value) => setState(prev => ({ ...prev, error: value }));
+  const setIdInput = (value) => setState(prev => ({ ...prev, idInput: value }));
+  const setViewMode = (value) => setState(prev => ({ ...prev, viewMode: value }));
+  const setAvailableSheets = (value) => setState(prev => ({ ...prev, availableSheets: value }));
+  const setLoadingSheets = (value) => setState(prev => ({ ...prev, loadingSheets: value }));
 
   // Fetch sheet names on component mount
   useEffect(() => {

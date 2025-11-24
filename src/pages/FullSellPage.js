@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { fetchAllData, fetchSheetNames } from '../services/googleSheets_Via';
+import { fetchTongBanData, fetchTongBanSheetNames } from '../services/googleSheets_TongBan';
 
-function DashboardPage() {
+function FullSellPage() {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [idInput, setIdInput] = useState('');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'search'
-  const [availableSheets, setAvailableSheets] = useState(['FULL_VIA']);
+  const [availableSheets, setAvailableSheets] = useState(['Sheet1']);
   const [loadingSheets, setLoadingSheets] = useState(true);
 
   // Fetch sheet names on component mount
@@ -17,14 +17,13 @@ function DashboardPage() {
     const loadSheetNames = async () => {
       try {
         setLoadingSheets(true);
-        const sheetNames = await fetchSheetNames();
+        const sheetNames = await fetchTongBanSheetNames();
         if (sheetNames.length > 0) {
           setAvailableSheets(sheetNames);
         }
       } catch (err) {
         console.error('Failed to load sheet names:', err);
-        // Keep default sheets if API call fails
-        setAvailableSheets(['FULL_VIA']);
+        setAvailableSheets(['Sheet1']);
       } finally {
         setLoadingSheets(false);
       }
@@ -52,12 +51,14 @@ function DashboardPage() {
       // Search across all available sheets IN PARALLEL
       const searchPromises = availableSheets.map(async (sheet) => {
         try {
-          const sheetData = await fetchAllData(sheet);
+          const sheetData = await fetchTongBanData(sheet);
           const foundInSheet = sheetData.filter(item => 
-            ids.some(id => 
-              String(item.ID) === String(id) || 
-              item.ID === id
-            )
+            ids.some(id => {
+              // Search in ALL columns for the ID value
+              return Object.values(item).some(value => 
+                String(value) === String(id)
+              );
+            })
           );
           
           if (foundInSheet.length > 0) {
@@ -194,4 +195,4 @@ function DashboardPage() {
   );
 }
 
-export default DashboardPage;
+export default FullSellPage;

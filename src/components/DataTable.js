@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function DataTable({ data }) {
+  const [copiedCell, setCopiedCell] = useState(null);
+
   if (!data || data.length === 0) {
     return null;
   }
 
   // Get column headers from the first data object
   const columns = Object.keys(data[0]);
+
+  const copyToClipboard = (text, cellId) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedCell(cellId);
+      setTimeout(() => setCopiedCell(null), 2000);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -54,19 +65,42 @@ function DataTable({ data }) {
                   {rowIndex + 1}
                 </td>
                 {/* Data cells - scroll horizontally */}
-                {columns.map((column) => (
-                  <td 
-                    key={`${rowIndex}-${column}`} 
-                    className="border-r border-gray-200 px-4 py-3 text-sm text-gray-800 whitespace-nowrap"
-                    style={{ minWidth: '150px', maxWidth: '400px' }}
-                  >
-                    <div className="overflow-hidden text-ellipsis" title={String(row[column] || '')}>
-                      {row[column] !== null && row[column] !== undefined && row[column] !== '' 
-                        ? String(row[column]) 
-                        : '-'}
-                    </div>
-                  </td>
-                ))}
+                {columns.map((column) => {
+                  const cellId = `${rowIndex}-${column}`;
+                  const cellValue = row[column] !== null && row[column] !== undefined && row[column] !== '' 
+                    ? String(row[column]) 
+                    : '-';
+                  const isCopied = copiedCell === cellId;
+                  
+                  return (
+                    <td 
+                      key={cellId} 
+                      className="border-r border-gray-200 px-2 py-2 text-sm text-gray-800 whitespace-nowrap group"
+                      style={{ minWidth: '150px', maxWidth: '400px' }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="overflow-hidden text-ellipsis flex-1" title={cellValue}>
+                          {cellValue}
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(cellValue, cellId)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-200 flex-shrink-0"
+                          title="Copy to clipboard"
+                        >
+                          {isCopied ? (
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
